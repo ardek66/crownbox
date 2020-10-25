@@ -8,7 +8,8 @@ proc cat(f: File) =
     buffLen = MaxBuffLen
   while buffLen > 0:
     buffLen = read(f.getOsFileHandle, buffer, MaxBuffLen)
-    if buffLen > 1: discard stdout.writeBuffer(buffer, MaxBuffLen)
+    if stdout.writeBuffer(buffer, buffLen) < buffLen:
+      stderr.write "Could not write buffer"
   
 proc catProc*(args: varargs[string]) =
   if args.len < 1:
