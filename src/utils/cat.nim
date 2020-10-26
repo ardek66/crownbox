@@ -9,7 +9,7 @@ proc cat(f: File) =
   while buffLen > 0:
     buffLen = read(f.getOsFileHandle, addr buffer, buffer.len.cint)
     if stdout.writeBuffer(addr buffer, buffLen) < buffLen:
-      stderr.write "Could not write buffer"
+      stderr.write "Could not write buffer.\n"
   
 proc catProc*(args: varargs[string]) =
   if args.len < 1:

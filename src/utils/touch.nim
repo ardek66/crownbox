@@ -48,9 +48,7 @@ proc touch(filename: string, flags: BitFlags) =
                 "Could not stat '" & filename & "'"
 
 proc touchProc*(args: varargs[string]) =
-  if args.len < 1:
-    echo "Usage: touch [-cam] files..."
-    return
+  usage "touch [-cam] file1 file2... "
   
   var options: string
   for arg in args: options = options & " " & arg
