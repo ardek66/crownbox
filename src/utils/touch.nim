@@ -1,5 +1,6 @@
 import posix, posix_utils
 import parseopt
+import private/errors
 
 type
   BitFlag* {.size: sizeof(cint).} = enum
@@ -21,14 +22,11 @@ proc touch(filename: string, flags: BitFlags) =
   try: tStat = stat(filename)
   except OSError:
     if C in flags:
-      stderr.write "File '", filename, "' does not exist.\n"
-      return
+      cError "File does not exist: '", filename, "'"
     
     let fd = open(filename, O_CREAT, S_IRUSR or S_IWUSR or S_IRGRP or S_IROTH)
+    cError fd, "Could not open file '" & filename & "'"
     discard close(fd)
-    if fd < 0:
-      stderr.write "Could not create file '", filename, "'.\n"
-      return
     
     tStat = stat(filename)
 
@@ -46,11 +44,9 @@ proc touch(filename: string, flags: BitFlags) =
         ts[i] = TimeSpec(tv_sec: sec, tv_nsec: UTIME_OMIT)
       sec = tStat.st_mtime
     
-  if utimensat(AT_FDCWD, filename, addr ts, 0) < 0:
-    stderr.write "Could not stat '", filename, "'.\n"
-    return
-    
-    
+  cError utimensat(AT_FDCWD, filename, addr ts, 0),
+                "Could not stat '" & filename & "'"
+
 proc touchProc*(args: varargs[string]) =
   if args.len < 1:
     echo "Usage: touch [-cam] files..."
