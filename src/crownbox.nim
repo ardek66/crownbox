@@ -1,10 +1,11 @@
 import parseopt
-import utils, utils/[cat, echo]
+import utils, utils/[cat, echo, touch]
 
 var utilsTable = newUtilsTable()
 utilsTable.registerUtils:
   cat
   echo
+  touch
 
 var p = initOptParser()
 p.next
