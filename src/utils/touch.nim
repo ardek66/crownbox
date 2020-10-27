@@ -25,7 +25,7 @@ proc touch(filename: string, flags: BitFlags) =
       cError "File does not exist: '", filename, "'"
     
     let fd = open(filename, O_CREAT, S_IRUSR or S_IWUSR or S_IRGRP or S_IROTH)
-    cError fd, "Could not open file '" & filename & "'"
+    cError fd, "Could not create file '" & filename & "'"
     discard close(fd)
     
     tStat = stat(filename)
@@ -36,7 +36,7 @@ proc touch(filename: string, flags: BitFlags) =
   var ts: array[2, TimeSpec]
   ts[0] = TimeSpec(tv_sec: t, tv_nsec: UTIME_NOW)
   ts[1] = ts[0]
-
+import posix
   if A in flags or M in flags:
     var sec = tStat.st_atime
     for i, flg in [A, M]:

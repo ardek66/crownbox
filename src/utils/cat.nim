@@ -1,8 +1,17 @@
+import private/errors
+
 const MaxBuffLen = 2048
 
 proc read(fd: cint, buf: pointer, count: cint): cint {.importc.}
 
-proc cat(f: File) =
+proc cat(filename: string) =
+  var f: File
+  try:
+    f = if filename == "-": stdin
+        else: open(filename)
+  except IOError:
+    cError -1, "Could not open file '" & filename & "'"
+    
   var
     buffer: array[MaxBuffLen, char]
     buffLen = MaxBuffLen
@@ -13,16 +22,7 @@ proc cat(f: File) =
   
 proc catProc*(args: varargs[string]) =
   if args.len < 1:
-    cat stdin
+    cat "-"
     return
-
-  for arg in args:
-    var input: File
-    if arg == "-": input = stdin
-    else:
-      try: input = open(arg)
-      except IOError:
-        stderr.write "Could not open '", arg, "'.\n"
-        continue
-    cat input
-    close(input)
+  
+  for arg in args: cat arg
