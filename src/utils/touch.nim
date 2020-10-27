@@ -36,7 +36,7 @@ proc touch(filename: string, flags: BitFlags) =
   var ts: array[2, TimeSpec]
   ts[0] = TimeSpec(tv_sec: t, tv_nsec: UTIME_NOW)
   ts[1] = ts[0]
-import posix
+  
   if A in flags or M in flags:
     var sec = tStat.st_atime
     for i, flg in [A, M]:
