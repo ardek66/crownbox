@@ -1,5 +1,6 @@
-import posix, posix_utils
-import parseopt
+from os import fileExists
+import posix
+import parseopt, times
 import private/errors
 
 type
@@ -16,39 +17,51 @@ var
   UTIME_NOW{.importc, header:"<sys/stat.h>".}: cint
   AT_FDCWD{.importc, header:"<fcntl.h>".}: cint
 
-proc touch(filename: string, flags: BitFlags) =
-  var tStat: Stat
+proc parseTimeToPosix(dateTime: string): posix.Time =
+  var tm: Tm
+  let parseDt = parse(dateTime, "YYYY-MM-dd/HH:mm:ss")
+
+  tm.tm_sec = parseDt.second.cint
+  tm.tm_min = parseDt.minute.cint
+  tm.tm_hour = parseDt.hour.cint
+  tm.tm_mday = parseDt.monthday.cint
+  tm.tm_mon = ord(parseDt.month).cint - 1
+  tm.tm_year = parseDt.year.cint - 1900
   
-  try: tStat = stat(filename)
-  except OSError:
+  result = mktime(tm)
+  
+proc touch(filename: string, flags: BitFlags, dateTime: string) =
+  if not fileExists(filename):
     if C in flags:
       cError "File does not exist: '", filename, "'"
     
     let fd = open(filename, O_CREAT, S_IRUSR or S_IWUSR or S_IRGRP or S_IROTH)
     cError fd, "Could not create file '" & filename & "'"
     discard close(fd)
-    
-    tStat = stat(filename)
 
-  var t: Time
-  discard time(t)
+  var
+    ns = UTIME_NOW
+    ts: array[2, TimeSpec]
   
-  var ts: array[2, TimeSpec]
-  ts[0] = TimeSpec(tv_sec: t, tv_nsec: UTIME_NOW)
+  if dateTime.len > 0:
+    try:
+      ts[0].tv_sec = parseTimeToPosix(dateTime)
+      ns = 0
+    except TimeParseError:
+      cError "Invalid date/time. Format is: YYYY-MM-dd/HH:mm:ss"
+  
+  ts[0].tv_nsec = ns
   ts[1] = ts[0]
   
-  if A in flags or M in flags:
-    var sec = tStat.st_atime
-    for i, flg in [A, M]:
-      if flg notin flags:
-        ts[i] = TimeSpec(tv_sec: sec, tv_nsec: UTIME_OMIT)
-      sec = tStat.st_mtime
-    
+  if A in flags xor M in flags:
+    let amFlagsInt = cast[cint](flags) shr 1
+    ts[(amFlagsInt xor 3) - 1].tv_nsec = UTIME_OMIT
+  
   cError utimensat(AT_FDCWD, filename, addr ts, 0),
-                "Could not stat '" & filename & "'"
+                "Could not touch '" & filename & "'"
 
 proc touchProc*(args: varargs[string]) =
-  usage "touch [-cam] file1 file2... "
+  usage "touch [-cam] [-d YYYY-MM-dd/HH:mm:ss] file1 file2... "
   
   var options: string
   for arg in args: options = options & " " & arg
@@ -56,6 +69,7 @@ proc touchProc*(args: varargs[string]) =
   var
     p = initOptParser(options)
     flags: BitFlags
+    dateTime: string
   
   for kind, key, val in p.getopt():
     case kind:
@@ -64,6 +78,7 @@ proc touchProc*(args: varargs[string]) =
       of "c": flags.incl C
       of "a": flags.incl A
       of "m": flags.incl M
+      of "d": dateTime = val
     of cmdArgument:
-      touch(key, flags)
+      touch(key, flags, dateTime)
     else: discard
