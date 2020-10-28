@@ -1,11 +1,11 @@
 import posix
 
-proc cError*(messages: varargs[string]) =
+template cError*(messages: varargs[string]): untyped =
   for msg in messages: stderr.write msg
-  stderr.write "\n"
-  quit 1
+  stderr.write ".\n"
+  return
 
-proc cError*(err: int, message: string) =
+template cError*(err: int, message: string): untyped =
   if err < 0:
     cError message, ": ", $strerror(errno)
 
