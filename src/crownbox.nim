@@ -1,11 +1,12 @@
 import parseopt, os
-import utils, utils/[cat, echo, touch]
+import utils, utils/[cat, echo, touch, rm]
 
 var utilsTable = newUtilsTable()
 utilsTable.registerUtils:
   cat
   echo
   touch
+  rm
 
 proc runCommand(name: string, args: varargs[string]) =
   if name in utilsTable:
