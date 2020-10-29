@@ -37,16 +37,16 @@ proc rmFileOrEmpty(filename: string) =
     cError unlink(filename), "Could not remove file"
   
 proc rmRecurse(dirname: string) =
-  var dirpath = dirname
-  if dirpath[^1] != '/': dirpath.add '/'
+  var dirPath = dirname
+  if dirPath[^1] != '/': dirPath.add '/'
   
   for file in dirname.readDir:
-    let path = dirpath & file
-    if path.isDir:
-      rmRecurse(path)
+    let filePath = dirPath & file
+    if filePath.isDir:
+      rmRecurse(filePath)
       continue
-    rmFileOrEmpty(path)
-  rmFileOrEmpty(dirname)
+    rmFileOrEmpty(filePath)
+  rmFileOrEmpty(dirPath)
 
 proc rmProc*(args: varargs[string]) =
   usage "rm file1 file2..."
