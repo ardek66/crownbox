@@ -2,10 +2,8 @@ import posix, posix_utils, os
 import parseopt
 import private/errors
 
-type
-  BitFlag {.size: sizeof(cint).} = enum
-    R
-  BitFlags = set[BitFlag]
+var
+  recurse, force: bool
 
 proc isDotDot(filename: string): bool =
   let base = filename.extractFileName
@@ -31,6 +29,11 @@ proc isDir(filename: string): bool =
   return S_ISDIR(stat.st_mode)
 
 proc rmFileOrEmpty(filename: string) =
+  if not force and access(filename, W_OK) < 0:
+    stdout.write "Remove write-protected file '", filename, "'? "
+    let answer = stdin.readLine
+    if answer[0] in ['n', 'N']: return
+  
   if filename.isDir:
     cError rmdir(filename), "Could not remove dir"
   else:
@@ -48,25 +51,27 @@ proc rmRecurse(dirname: string) =
     rmFileOrEmpty(filePath)
   rmFileOrEmpty(dirPath)
 
+proc rm(filename: string) =
+  if filename.isDotDot: return
+  try:
+    if recurse: rmRecurse(filename)
+    else: rmFileOrEmpty(filename)
+  except OSError:
+    cError -1, "Could not remove '" & filename & "'"
+  
 proc rmProc*(args: varargs[string]) =
   usage "rm file1 file2..."
   var options: string
   for arg in args: options = options & " " & arg
   
-  var
-    p = initOptParser(options)
-    flags: BitFlags
+  var p = initOptParser(options)
   
   for kind, key, val in p.getopt():
     case kind:
     of cmdShortOption:
       case key:
-      of "r": flags.incl R
+      of "r": recurse = true
+      of "f": force = true
     of cmdArgument:
-      if key.isDotDot: continue
-      try:
-        if R in flags: rmRecurse(key)
-        else: rmFileOrEmpty(key)
-      except OSError:
-        cError -1, "Could not remove file or directory"
+      rm(key)
     else: discard
