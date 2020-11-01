@@ -1,8 +1,6 @@
-import private/errors
+import private/[errors, helpers]
 
 const MaxBuffLen = 2048
-
-proc read(fd: cint, buf: pointer, count: cint): cint {.importc.}
 
 proc cat(filename: string) =
   var f: File

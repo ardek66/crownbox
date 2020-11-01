@@ -1,7 +1,7 @@
 from os import fileExists
 import posix
 import parseopt, times
-import private/errors
+import private/[errors, helpers]
 
 type
   BitFlag* {.size: sizeof(cint).} = enum
@@ -9,13 +9,6 @@ type
     A
     M
   BitFlags = set[BitFlag]
-
-proc utimensat(fd: int, path: cstring, times: ptr array[2, TimeSpec], flags: cint): cint{.importc, header:"<sys/stat.h>".}
-
-var
-  UTIME_OMIT{.importc, header:"<sys/stat.h>".}: cint
-  UTIME_NOW{.importc, header:"<sys/stat.h>".}: cint
-  AT_FDCWD{.importc, header:"<fcntl.h>".}: cint
 
 proc parseTimeToPosix(dateTime: string): posix.Time =
   var tm: Tm

@@ -1,32 +1,9 @@
 import posix, posix_utils, os
 import parseopt
-import private/errors
+import private/[errors, helpers]
 
 var
   recurse, force: bool
-
-proc isDotDot(filename: string): bool =
-  let base = filename.extractFileName
-  return base == "." or base == ".."
-
-iterator readDir(dirname: string): string =
-  let dirptr = opendir(dirname)
-  
-  var dirent = readdir(dirptr)
-  while dirent != nil:
-    var filename: string
-    for c in dirent.d_name:
-      if c == '\0': break
-      filename.add c
-    if not filename.isDotDot:
-      yield filename
-    dirent = readdir(dirptr)
-  
-  discard closedir(dirptr)
-
-proc isDir(filename: string): bool =
-  let stat = stat(filename)
-  return S_ISDIR(stat.st_mode)
 
 proc rmFileOrEmpty(filename: string) =
   if not force and access(filename, W_OK) < 0:
