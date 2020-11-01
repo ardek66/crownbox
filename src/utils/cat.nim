@@ -14,7 +14,8 @@ proc cat(filename: string) =
     
   var
     buffer: array[MaxBuffLen, char]
-    buffLen = MaxBuffLen
+    buffLen = buffer.len
+  
   while buffLen > 0:
     buffLen = read(f.getOsFileHandle, addr buffer, buffer.len.cint)
     if stdout.writeBuffer(addr buffer, buffLen) < buffLen:

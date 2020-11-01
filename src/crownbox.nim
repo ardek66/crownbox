@@ -8,6 +8,8 @@ utilsTable.registerUtils:
   touch
   rm
 
+setStdioUnbuffered()
+
 proc runCommand(name: string, args: varargs[string]) =
   if name in utilsTable:
     utilsTable[name](args)
